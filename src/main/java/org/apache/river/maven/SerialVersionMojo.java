@@ -27,8 +27,6 @@ import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -36,6 +34,7 @@ import javassist.CtClass;
 import javassist.CtField;
 import javassist.Modifier;
 import javassist.NotFoundException;
+import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.DirectoryScanner;
 
 @Mojo(name = "serialver", defaultPhase = LifecyclePhase.PROCESS_CLASSES)
@@ -44,34 +43,30 @@ public class SerialVersionMojo extends AbstractMojo {
   private static final String SERIAL_VERSION_FIELD = "serialVersionUID";
 
   @Parameter(defaultValue = "${project.build.outputDirectory}", property = "classDir", required = true)
-  private File classDirectory;
-
-  @Parameter(defaultValue = "${project.build.directory}/processed-classes", property = "outputDir", required = true)
   private File outputDirectory;
-
-  @Parameter(defaultValue = "false", property = "keepOriginal", required = true)
-  private boolean keepOriginal;
 
   @Parameter(defaultValue = "false", property = "overwrite", required = true)
   private boolean overwrite;
 
+  @Parameter(readonly = true, defaultValue = "${project}")
+  private MavenProject project;
+  
   @Override
   public void execute() throws MojoExecutionException {
 
     try {
-      
-      URLClassLoader classLoader = new URLClassLoader(new URL[]{classDirectory.toURI().toURL()});
+      URLClassLoader classLoader = new URLClassLoader(new URL[]{outputDirectory.toURI().toURL()});
 
       ClassPool classPool = ClassPool.getDefault();
-      classPool.appendClassPath(classDirectory.getAbsolutePath());
+      classPool.appendClassPath(outputDirectory.getAbsolutePath());
 
       DirectoryScanner directoryScanner = new DirectoryScanner();
-      directoryScanner.setBasedir(classDirectory);
+      directoryScanner.setBasedir(outputDirectory);
       directoryScanner.setIncludes(new String[]{"**/*.class"});
       directoryScanner.scan();
 
       String[] classFileNames = directoryScanner.getIncludedFiles();
-      getLog().debug(String.format("Processing class files: %s", Arrays.toString(classFileNames)));
+      getLog().debug(String.format("Inspecting class files: %s", Arrays.toString(classFileNames)));
 
       for (String classFileName : classFileNames) {
         String className = getClassName(classFileName);
@@ -101,20 +96,14 @@ public class SerialVersionMojo extends AbstractMojo {
           }
 
           if (shouldAddSerialVersionUID) {
-            getLog().debug(String.format("Class='%s': adding serialVersionUID='%s'", classFileName, calculatedSerialVersionUID));
+            getLog().info(String.format("Class='%s': adding serialVersionUID='%s'", classFileName, calculatedSerialVersionUID));
             ctField = new CtField(CtClass.longType, SERIAL_VERSION_FIELD, ctClass);
             ctField.setModifiers(Modifier.PRIVATE | Modifier.STATIC | Modifier.FINAL);
             ctClass.addField(ctField, CtField.Initializer.constant(calculatedSerialVersionUID));
             ctClass.writeFile(outputDirectory.getAbsolutePath());
           }
-
-          if (!keepOriginal) {
-            getLog().debug(String.format("Removing class file: '%s'", classFileName));
-            Files.deleteIfExists(Paths.get(classDirectory.getAbsolutePath(), classFileName));
-          }
         }
       }
-
     } catch (ClassNotFoundException | NotFoundException | IllegalStateException | CannotCompileException | IOException e) {
       throw new MojoExecutionException("Error processing class files", e);
     }
