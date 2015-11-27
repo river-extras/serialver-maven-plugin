@@ -1,1 +1,3 @@
-# serialver-maven-plugin
+Apache River: Serialver Maven Plugin
+=========================================
+
