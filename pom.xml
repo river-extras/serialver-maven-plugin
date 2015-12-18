@@ -8,6 +8,7 @@
   <packaging>maven-plugin</packaging>
 
   <name>Apache River: Serialver Maven Plugin</name>
+  <description>Maven plugin to generate and add 'serialVersionUID' fields to classes.</description>
 
   <url>https://github.com/river-extras/serialver-maven-plugin</url>
   
@@ -16,6 +17,21 @@
     <developerConnection>scm:git:git@github.com:river-extras/serialver-maven-plugin.git</developerConnection>
     <url>https://github.com/river-extras/serialver-maven-plugin</url>
   </scm>
+
+  <licenses>
+    <license>
+      <name>The Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+  
+  <developers>
+    <developer>
+      <name>Josh Reagan</name>
+      <email>josh.d.reagan@gmail.com</email>
+      <organizationUrl>http://joshdreagan.github.io/</organizationUrl>
+    </developer>
+  </developers>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
